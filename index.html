@@ -7,83 +7,86 @@
         body {
             margin: 0;
             font-family: Arial, Helvetica, sans-serif;
-            background-color: #f4f6f9;
+            background-color: #f2f4f8;
         }
 
         header {
-            background-color: #2c3e50;
+            background-color: #0b3d91; /* Azul marino fuerte */
             color: white;
             text-align: center;
-            padding: 30px 0;
+            padding: 40px 20px;
         }
 
         header h1 {
-            margin: 5px;
+            margin: 10px 0;
             font-size: 32px;
         }
 
         header h2 {
-            margin: 5px;
+            margin: 5px 0;
             font-weight: normal;
         }
 
         nav {
-            background-color: #3498db;
-            padding: 10px;
+            background-color: #082567; /* Azul más oscuro */
+            padding: 15px;
             text-align: center;
         }
 
         nav a {
             color: white;
             text-decoration: none;
-            margin: 0 15px;
+            margin: 0 20px;
             font-weight: bold;
+            font-size: 16px;
         }
 
         nav a:hover {
             text-decoration: underline;
         }
 
-        .contenedor {
-            padding: 40px;
+        section {
+            padding: 50px 20px;
             text-align: center;
         }
 
-        .proyectos {
+        .card {
             background-color: white;
-            margin: 20px auto;
-            padding: 20px;
-            width: 70%;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 75%;
+            margin: auto;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
         }
 
-        .proyecto-item {
-            background-color: #ecf0f1;
-            margin: 10px;
-            padding: 15px;
-            border-radius: 8px;
-        }
-
-        footer {
-            background-color: #2c3e50;
-            color: white;
-            text-align: center;
-            padding: 15px;
-            margin-top: 40px;
+        input[type="file"] {
+            margin: 15px 0;
         }
 
         button {
-            background-color: #3498db;
+            background-color: #0b3d91;
             color: white;
             border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
+            padding: 10px 20px;
+            border-radius: 6px;
             cursor: pointer;
+            font-weight: bold;
         }
 
         button:hover {
-            background-color: #2980b9;
+            background-color: #082567;
+        }
+
+        footer {
+            background-color: #0b3d91;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+        }
+
+        h2 {
+            color: #0b3d91;
         }
     </style>
 </head>
@@ -91,39 +94,47 @@
 
     <header>
         <h1>Citlali Alcaraz Valdivias</h1>
-        <h2>Materia: Probabilidad y Estadística</h2>
+        <h2>Probabilidad y Estadística</h2>
     </header>
 
     <nav>
-        <a href="#">Inicio</a>
+        <a href="#inicio">Inicio</a>
         <a href="#proyectos">Proyectos</a>
-        <a href="#">Contacto</a>
+        <a href="#contacto">Contacto</a>
     </nav>
 
-    <div class="contenedor">
-        <section id="proyectos" class="proyectos">
+    <section id="inicio">
+        <div class="card">
+            <h2>Inicio</h2>
+            <p>
+                Soy estudiante de la Facultad de Ingeniería Eléctrica de la carrera de 
+                Ingeniería Computacional.
+            </p>
+            <p>
+                Actualmente curso la materia de <strong>Probabilidad y Estadística</strong> 
+                en el grupo 503.
+            </p>
+        </div>
+    </section>
+
+    <section id="proyectos">
+        <div class="card">
             <h2>Mis Proyectos</h2>
+            <p>Aquí puedes subir tus proyectos en formato PDF, Word o imágenes:</p>
+            
+            <input type="file">
+            <br>
+            <button>Subir Proyecto</button>
+        </div>
+    </section>
 
-            <div class="proyecto-item">
-                <h3>Proyecto 1</h3>
-                <p>Aquí puedes agregar la descripción de tu proyecto.</p>
-                <button>Ver Proyecto</button>
-            </div>
-
-            <div class="proyecto-item">
-                <h3>Proyecto 2</h3>
-                <p>Aquí puedes agregar la descripción de tu proyecto.</p>
-                <button>Ver Proyecto</button>
-            </div>
-
-            <div class="proyecto-item">
-                <h3>Proyecto 3</h3>
-                <p>Aquí puedes agregar la descripción de tu proyecto.</p>
-                <button>Ver Proyecto</button>
-            </div>
-
-        </section>
-    </div>
+    <section id="contacto">
+        <div class="card">
+            <h2>Contacto</h2>
+            <p><strong>Correo electrónico:</strong> 2337506g@umich.mx</p>
+            <p><strong>Teléfono:</strong> 4436824159</p>
+        </div>
+    </section>
 
     <footer>
         © 2026 - Página creada para la materia de Probabilidad y Estadística
