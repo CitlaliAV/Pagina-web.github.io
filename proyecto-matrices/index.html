@@ -266,19 +266,27 @@ function graficar(id, x, y, y_adj){
         ctx.fill();
     }
 
-    if(y_adj){
-        ctx.strokeStyle = "#0b3c5d";
-        ctx.lineWidth = 2;
+if(y_adj){
 
+    ctx.fillStyle = "#0b3c5d";
+    for(let i=0;i<x.length;i++){
         ctx.beginPath();
-        ctx.moveTo(sx(x[0]), sy(y_adj[0]));
-
-        for(let i=1;i<x.length;i++){
-            ctx.lineTo(sx(x[i]), sy(y_adj[i]));
-        }
-
-        ctx.stroke();
+        ctx.arc(sx(x[i]), sy(y_adj[i]), 4, 0, 2*Math.PI);
+        ctx.fill();
     }
+
+    ctx.strokeStyle = "#0b3c5d";
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.moveTo(sx(x[0]), sy(y_adj[0]));
+
+    for(let i=1;i<x.length;i++){
+        ctx.lineTo(sx(x[i]), sy(y_adj[i]));
+    }
+
+    ctx.stroke();
+}
 }
 
 </script>
