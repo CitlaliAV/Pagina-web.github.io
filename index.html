@@ -43,7 +43,7 @@
 
         @keyframes gradientLento {
             0% { background-position: 0% 50%; }
-            50% { background-position:  % 50%; }
+            50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
 
@@ -843,10 +843,10 @@
     </header>
 
     <main class="contenedor">
-        <!-- Botón de regresar (invisible por defecto) -->
+        <!-- Botón de regresar -->
         <button id="btnRegresar" class="btn-regresar" style="display: none;">Regresar</button>
 
-        <!-- ========== EDITOR DE MATERIAS ========== -->
+        <!-- ========== EDITOR DE MATERIAS (solo visible en admin) ========== -->
         <div class="admin-materias-panel" id="adminMateriasPanel">
             <h3>Administrar Materias</h3>
             <div class="materias-lista" id="materiasLista">
@@ -900,6 +900,7 @@
                     </div>
                     <div class="form-group">
                         <label>Enlace al proyecto</label>
+                        <!-- CAMBIADO DE 'url' A 'text' PARA ACEPTAR RUTAS RELATIVAS -->
                         <input type="text" id="enlace" placeholder="Ej: proyecto-matrices/ o https://...">
                     </div>
                     
@@ -919,7 +920,7 @@
             <!-- Grid de proyectos -->
             <div id="proyectosGrid" class="proyectos-grid"></div>
 
-            <!-- Estado vacío -->
+            <!-- Estado vacío (rara vez se verá porque ya hay proyectos) -->
             <div id="emptyState" class="proyectos-empty" style="display: none;">
                 <div class="empty-illustration">📭</div>
                 <p>Aún no hay proyectos en esta materia</p>
@@ -949,8 +950,12 @@
             pin: "2001"
         };
 
-        // Estado
+        // ============================================
+        // ESTADO INICIAL CON PROYECTOS PERMANENTES
+        // ============================================
         let modoAdmin = false;
+        
+        // Materia por defecto
         let materias = [
             {
                 id: 'materia1',
@@ -960,19 +965,62 @@
                 visible: true
             }
         ];
-        let proyectos = [];
+
+        // ===== PROYECTOS PERMANENTES (SIEMPRE VISIBLES PARA TODOS) =====
+        // Estos proyectos aparecerán automáticamente sin necesidad de PIN
+        let proyectos = [
+            {
+                id: 1,
+                materiaId: 'materia1',
+                titulo: 'Calculadora de Regresión Lineal por Matrices',
+                descripcion: 'Programa que calcula la línea de mejor ajuste usando la fórmula matricial (M^T M)^-1 M^T B. Permite ingresar puntos manualmente, ver los cálculos paso a paso, obtener la ecuación de la recta (y = mx + b) y generar la gráfica automáticamente.',
+                enlace: 'proyecto-matrices/',
+                imagen: '',
+                fecha: '2024'
+            },
+            {
+                id: 2,
+                materiaId: 'materia1',
+                titulo: 'Lector de Recibos de Luz',
+                descripcion: 'Proyecto para leer y analizar recibos de luz, extraer información y calcular consumos.',
+                enlace: 'proyecto-recibo-de-luz/',
+                imagen: '',
+                fecha: '2024'
+            }
+            // 👇 Para agregar más proyectos en el futuro, solo copia y pega un bloque como el de arriba
+            // {
+            //     id: 3,  // Cambia el número
+            //     materiaId: 'materia1',
+            //     titulo: 'Título de tu nuevo proyecto',
+            //     descripcion: 'Descripción del proyecto',
+            //     enlace: 'nombre-de-la-carpeta/',
+            //     imagen: '',
+            //     fecha: '2024'
+            // }
+        ];
+
         let materiaActualId = 'materia1';
 
-        // Cargar datos guardados
-        const materiasGuardadas = localStorage.getItem('materias');
-        if (materiasGuardadas) {
-            materias = JSON.parse(materiasGuardadas);
-        }
-        
+        // Cargar proyectos adicionales guardados en localStorage (si existen)
+        // Esto permite que si alguien usa el panel admin, sus proyectos extra también aparezcan
         const proyectosGuardados = localStorage.getItem('proyectos');
         if (proyectosGuardados) {
-            proyectos = JSON.parse(proyectosGuardados);
+            try {
+                const proyectosExtra = JSON.parse(proyectosGuardados);
+                // Combinar proyectos fijos con los guardados (evitando duplicados)
+                const idsExistentes = proyectos.map(p => p.id);
+                proyectosExtra.forEach(p => {
+                    if (!idsExistentes.includes(p.id)) {
+                        proyectos.push(p);
+                    }
+                });
+            } catch(e) {
+                console.log('Error cargando proyectos guardados');
+            }
         }
+
+        // Guardar los proyectos combinados en localStorage para consistencia
+        localStorage.setItem('proyectos', JSON.stringify(proyectos));
 
         // Elementos
         const materiasContainer = document.getElementById('materiasContainer');
@@ -1014,7 +1062,7 @@
                         </h3>
                         <p>${materia.profesor}</p>
                     </div>
-                    <div class="materia-controls admin-only" style="display: none;">
+                    <div class="materia-controls admin-only" style="display: ${modoAdmin ? 'flex' : 'none'};">
                         <button class="materia-btn editar-materia" onclick="editarMateria('${materia.id}')">✏️</button>
                         <button class="materia-btn ocultar-materia" onclick="toggleVisibilidadMateria('${materia.id}')">👁️</button>
                         ${materia.id !== 'materia1' ? `<button class="materia-btn eliminar-materia" onclick="eliminarMateria('${materia.id}')">🗑️</button>` : ''}
@@ -1039,7 +1087,7 @@
             
             // Ocultar materias y mostrar proyectos
             materiasContainer.style.display = 'none';
-            adminMateriasPanel.style.display = 'none';
+            adminMateriasPanel.style.display = modoAdmin ? 'block' : 'none';
             proyectosSection.style.display = 'block';
             btnRegresar.style.display = 'inline-flex';
             
@@ -1048,54 +1096,70 @@
             mostrarProyectos(proyectosMateria);
         }
 
-      // Mostrar proyectos
-function mostrarProyectos(proyectosAMostrar) {
-    proyectosGrid.innerHTML = '';
-    
-    if (proyectosAMostrar.length === 0) {
-        emptyState.style.display = 'block';
-        return;
-    }
-    
-    emptyState.style.display = 'none';
-    
-    proyectosAMostrar.forEach((proyecto) => {
-        const card = document.createElement('div');
-        card.className = 'proyecto-card';
-        card.setAttribute('data-id', proyecto.id);
-        
-        // 👇 TU NUEVA LEYENDA
-        const linkIndicator = proyecto.enlace ? 
-            '<span class="link-indicator">Haz clic para abrir (🔗Ctrl + clic para abrir en una nueva pestaña)</span>' : '';
-        
-        card.innerHTML = `
-            <div class="proyecto-img">
-                ${proyecto.imagen ? `<img src="${proyecto.imagen}" alt="${proyecto.titulo}">` : '📁'}
-            </div>
-            <div class="proyecto-info">
-                <h4>${proyecto.titulo}</h4>
-                ${proyecto.descripcion ? `<div class="proyecto-descripcion">${proyecto.descripcion}</div>` : ''}
-                ${linkIndicator}
-            </div>
-            <div class="proyecto-controls">
-                <button class="proyecto-btn editar-proyecto" onclick="editarProyecto('${proyecto.id}')">✏️</button>
-                <button class="proyecto-btn eliminar-proyecto" onclick="eliminarProyecto('${proyecto.id}')">🗑️</button>
-            </div>
-        `;
-        
-        card.addEventListener('click', (e) => {
-            if (!e.target.classList.contains('proyecto-btn') && proyecto.enlace) {
-                if (e.ctrlKey || e.metaKey) {
-                    window.open(proyecto.enlace, '_blank');
-                } else {
-                    window.open(proyecto.enlace, '_self');
-                }
+        // Mostrar proyectos
+        function mostrarProyectos(proyectosAMostrar) {
+            proyectosGrid.innerHTML = '';
+            
+            if (proyectosAMostrar.length === 0) {
+                emptyState.style.display = 'block';
+                return;
             }
-        });
-        
-        proyectosGrid.appendChild(card);
-    });
-}
+            
+            emptyState.style.display = 'none';
+            
+            proyectosAMostrar.forEach((proyecto) => {
+                const card = document.createElement('div');
+                card.className = 'proyecto-card';
+                card.setAttribute('data-id', proyecto.id);
+                
+                // Determinar si es enlace relativo o absoluto
+                let enlaceCompleto = proyecto.enlace;
+                if (proyecto.enlace && !proyecto.enlace.startsWith('http')) {
+                    // Si es relativo, asegurar que tenga slash al final si es carpeta
+                    enlaceCompleto = proyecto.enlace.endsWith('/') ? proyecto.enlace : proyecto.enlace + '/';
+                }
+                
+                const linkIndicator = proyecto.enlace ? 
+                    '<span class="link-indicator">🔗 Haz clic para abrir (Ctrl+clic para nueva pestaña)</span>' : '';
+                
+                card.innerHTML = `
+                    <div class="proyecto-img">
+                        ${proyecto.imagen ? `<img src="${proyecto.imagen}" alt="${proyecto.titulo}">` : '📁'}
+                    </div>
+                    <div class="proyecto-info">
+                        <h4>${proyecto.titulo}</h4>
+                        ${proyecto.descripcion ? `<div class="proyecto-descripcion">${proyecto.descripcion}</div>` : ''}
+                        ${linkIndicator}
+                    </div>
+                    <div class="proyecto-controls" style="display: ${modoAdmin ? 'flex' : 'none'};">
+                        <button class="proyecto-btn editar-proyecto" onclick="editarProyecto('${proyecto.id}')">✏️</button>
+                        <button class="proyecto-btn eliminar-proyecto" onclick="eliminarProyecto('${proyecto.id}')">🗑️</button>
+                    </div>
+                `;
+                
+                card.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('proyecto-btn') && proyecto.enlace) {
+                        e.preventDefault();
+                        let url = proyecto.enlace;
+                        
+                        // Si es relativo, construir URL completa
+                        if (!url.startsWith('http')) {
+                            // Quitar slash inicial si existe para evitar doble slash
+                            url = url.startsWith('/') ? url.substring(1) : url;
+                            url = window.location.origin + '/' + window.location.pathname.split('/').slice(0, -1).join('/') + '/' + url;
+                        }
+                        
+                        if (e.ctrlKey || e.metaKey) {
+                            window.open(url, '_blank');
+                        } else {
+                            window.location.href = url;
+                        }
+                    }
+                });
+                
+                proyectosGrid.appendChild(card);
+            });
+        }
 
         // Regresar a la lista de materias
         btnRegresar.addEventListener('click', () => {
@@ -1129,8 +1193,9 @@ function mostrarProyectos(proyectosAMostrar) {
             });
         }
 
-        // Editar materia (con imagen incluida)
+        // Editar materia
         window.editarMateria = function(id) {
+            if (!modoAdmin) return;
             const materia = materias.find(m => m.id === id);
             const nuevoNombre = prompt('Nombre de la materia:', materia.nombre);
             if (nuevoNombre) {
@@ -1138,7 +1203,6 @@ function mostrarProyectos(proyectosAMostrar) {
                 const nuevoProfesor = prompt('Nombre del profesor:', materia.profesor);
                 if (nuevoProfesor !== null) materia.profesor = nuevoProfesor;
                 
-                // Preguntar si quiere cambiar la imagen
                 if (confirm('¿Quieres cambiar la imagen?')) {
                     const nuevaImagen = prompt('URL de la nueva imagen (dejar vacío para quitar imagen):', materia.imagen || '');
                     if (nuevaImagen !== null) {
@@ -1153,6 +1217,7 @@ function mostrarProyectos(proyectosAMostrar) {
         };
 
         window.toggleVisibilidadMateria = function(id) {
+            if (!modoAdmin) return;
             const materia = materias.find(m => m.id === id);
             materia.visible = !materia.visible;
             guardarMaterias();
@@ -1161,6 +1226,7 @@ function mostrarProyectos(proyectosAMostrar) {
         };
 
         window.eliminarMateria = function(id) {
+            if (!modoAdmin) return;
             if (confirm('¿Eliminar esta materia?')) {
                 materias = materias.filter(m => m.id !== id);
                 guardarMaterias();
@@ -1169,11 +1235,11 @@ function mostrarProyectos(proyectosAMostrar) {
             }
         };
 
-        // Editar proyecto (con imagen incluida)
+        // Editar proyecto
         window.editarProyecto = function(id) {
+            if (!modoAdmin) return;
             const proyecto = proyectos.find(p => p.id == id);
             
-            // Llenar formulario con datos del proyecto
             proyectoId.value = proyecto.id;
             document.getElementById('titulo').value = proyecto.titulo || '';
             document.getElementById('descripcion').value = proyecto.descripcion || '';
@@ -1182,12 +1248,12 @@ function mostrarProyectos(proyectosAMostrar) {
             
             nuevoProyectoForm.classList.add('mostrar');
             
-            // Cambiar el texto del botón
             const submitBtn = document.querySelector('#formProyecto .btn-guardar');
             submitBtn.textContent = 'Actualizar proyecto';
         };
 
         window.eliminarProyecto = function(id) {
+            if (!modoAdmin) return;
             if (confirm('¿Eliminar este proyecto?')) {
                 proyectos = proyectos.filter(p => p.id != id);
                 const proyectosMateria = proyectos.filter(p => p.materiaId === materiaActualId);
@@ -1214,18 +1280,25 @@ function mostrarProyectos(proyectosAMostrar) {
                 pinCandado.innerHTML = '🔓';
                 adminMateriasPanel.style.display = 'block';
                 actualizarListaMaterias();
+                
+                // Mostrar controles de materia y proyecto
+                document.querySelectorAll('.materia-controls').forEach(el => el.style.display = 'flex');
+                document.querySelectorAll('.proyecto-controls').forEach(el => el.style.display = 'flex');
             } else {
                 document.body.classList.remove('modo-admin');
                 estadoAdmin.style.display = 'none';
                 pinCandado.innerHTML = '🔒';
                 adminMateriasPanel.style.display = 'none';
+                
+                // Ocultar controles
+                document.querySelectorAll('.materia-controls').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('.proyecto-controls').forEach(el => el.style.display = 'none');
             }
         }
 
         // Event listeners
-        // Toggle formulario nuevo proyecto
         btnNuevoProyecto.addEventListener('click', () => {
-            // Limpiar formulario
+            if (!modoAdmin) return;
             formProyecto.reset();
             proyectoId.value = '';
             document.getElementById('imagenUrl').value = '';
@@ -1268,6 +1341,7 @@ function mostrarProyectos(proyectosAMostrar) {
 
         // Guardar nueva materia
         document.getElementById('guardarMateria').addEventListener('click', function() {
+            if (!modoAdmin) return;
             const nombre = document.getElementById('nuevaMateriaNombre').value;
             const profesor = document.getElementById('nuevaMateriaProfesor').value;
             const imagenUrl = document.getElementById('nuevaMateriaImagenUrl').value;
@@ -1297,6 +1371,7 @@ function mostrarProyectos(proyectosAMostrar) {
         // Guardar o actualizar proyecto
         formProyecto.addEventListener('submit', (e) => {
             e.preventDefault();
+            if (!modoAdmin) return;
             
             const id = proyectoId.value;
             const proyectoData = {
@@ -1336,9 +1411,7 @@ function mostrarProyectos(proyectosAMostrar) {
 
         // PIN system
         document.getElementById('pinCandado').addEventListener('click', () => {
-            if (!modoAdmin) {
-                document.getElementById('pinModal').classList.toggle('mostrar');
-            }
+            document.getElementById('pinModal').classList.toggle('mostrar');
         });
 
         document.getElementById('verificarPin').addEventListener('click', () => {
