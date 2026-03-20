@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analizador de Recibos CFE</title>
+
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background-color:#ffffff;
+    margin:0;
+    padding:0;
+    text-align:center;
+}
+
+header{
+    background-color:#006341;
+    color:white;
+    padding:25px;
+}
+
+.container{
+    width:95%;
+    max-width:1000px;
+    margin:40px auto;
+}
+
+input[type="file"]{
+    padding:12px;
+    border:2px solid #006341;
+    border-radius:6px;
+    width:100%;
+    margin-bottom:20px;
+}
+
+button{
+    background-color:#006341;
+    color:white;
+    padding:12px 25px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:16px;
+    margin:5px;
+}
+
+button:hover{
+    background-color:#004d31;
+}
+
+.reset-btn{
+    background-color:#999999;
+}
+
+.reset-btn:hover{
+    background-color:#666666;
+}
+
+.results{
+    margin-top:30px;
+    font-size:18px;
+    color:#006341;
+}
+
+.result-box{
+    background:#f4fdf8;
+    border:1px solid #d4f0e2;
+    padding:15px;
+    border-radius:8px;
+    margin:10px 0;
+}
+
+.chart-container{
+    margin-top:40px;
+    overflow-x:auto; /* permite scroll horizontal si hay muchos recibos */
+}
+
+canvas{
+    min-width:600px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>Analizador Estadístico de Recibos CFE</h1>
+</header>
+
+<div class="container">
+
+    <h3>Sube uno o varios recibos en formato PDF</h3>
+
+    <input type="file" id="pdfFiles" multiple accept="application/pdf">
+
+    <div>
+        <button onclick="procesarPDFs()">Analizar Recibos</button>
+        <button class="reset-btn" onclick="reiniciarSistema()">Reiniciar</button>
+    </div>
+
+    <div class="results">
+        <div class="result-box">
+            <strong>Media:</strong> <span id="media">-</span>
+        </div>
+
+        <div class="result-box">
+            <strong>Varianza:</strong> <span id="varianza">-</span>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="grafica"></canvas>
+    </div>
+
+</div>
+
+<script>
+
+let montos = [];
+let chartInstance = null;
+
+async function procesarPDFs(){
+
+    montos = [];
+    const files = document.getElementById("pdfFiles").files;
+
+    if(files.length === 0){
+        alert("Selecciona al menos un archivo PDF.");
+        return;
+    }
+
+    for(let file of files){
+
+        const reader = new FileReader();
+
+        await new Promise(resolve => {
+
+            reader.onload = async function(){
+
+                const typedarray = new Uint8Array(this.result);
+                const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                let textoCompleto = "";
+
+                for(let i=1; i<=pdf.numPages; i++){
+                    const page = await pdf.getPage(i);
+                    const content = await page.getTextContent();
+                    const strings = content.items.map(item => item.str);
+                    textoCompleto += strings.join(" ") + " ";
+                }
+
+                extraerMonto(textoCompleto);
+                resolve();
+            };
+
+            reader.readAsArrayBuffer(file);
+
+        });
+    }
+
+    calcularEstadisticas();
+    generarGrafica();
+}
+
+
+function extraerMonto(texto){
+
+    const regexTotal = /TOTAL\s+A\s+PAGAR[\s\S]*?\$\s?([\d,]+(\.\d+)?)/i;
+    const match = texto.match(regexTotal);
+
+    if(match){
+        let montoTexto = match[1].replace(/,/g,"");
+        montos.push(parseFloat(montoTexto));
+    }
+}
+
+
+function calcularEstadisticas(){
+
+    if(montos.length === 0){
+        alert("No se detectaron montos en los archivos.");
+        return;
+    }
+
+    const n = montos.length;
+    const media = montos.reduce((a,b)=>a+b,0)/n;
+    const varianza = montos.reduce((a,b)=>a+Math.pow(b-media,2),0)/n;
+
+    document.getElementById("media").innerText = "$ " + media.toFixed(2);
+    document.getElementById("varianza").innerText = varianza.toFixed(2);
+}
+
+
+function generarGrafica(){
+
+    if(chartInstance){
+        chartInstance.destroy();
+    }
+
+    const ctx = document.getElementById('grafica').getContext('2d');
+
+    // Ajusta ancho dinámicamente según cantidad de recibos
+    const canvas = document.getElementById('grafica');
+    canvas.width = montos.length * 100;
+
+    chartInstance = new Chart(ctx,{
+        type:'bar',
+        data:{
+            labels: montos.map((_,i)=>"Recibo "+(i+1)),
+            datasets:[{
+                label:'Monto pagado ($)',
+                data: montos,
+                backgroundColor:'#006341'
+            }]
+        },
+        options:{
+            responsive:false,  // importante para que respete el ancho dinámico
+            scales:{
+                y:{
+                    beginAtZero:true
+                }
+            },
+            plugins:{
+                legend:{ display:false }
+            }
+        }
+    });
+}
+
+
+function reiniciarSistema(){
+
+    montos = [];
+
+    document.getElementById("pdfFiles").value = "";
+    document.getElementById("media").innerText = "-";
+    document.getElementById("varianza").innerText = "-";
+
+    if(chartInstance){
+        chartInstance.destroy();
+    }
+}
+
+</script>
+
+</body>
+</html>
+Mostrando Analizador-recibos.cfe.html.
